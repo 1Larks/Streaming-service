@@ -22,18 +22,18 @@ def main():
                     network_h.close_connection()
                 else:
                     #Handle data here
-                    if not stream_h.playing:
+                    
+                    if stream_h.playing:
+                        stream_h.curr_buffer.append(data)
+                    
+                    else:
                         if data.decode().strip('0')[:5] == 'PLAY:':
                             stream_h.playing = True
+                            stream_h.start_stream()
                         else:
                             #Handle other info from the server
                             pass
-                    
-                    if stream_h.playing:
-                        stream_h.curr_buffer = data
                         
-                    elif data.decode().strip('0')[:5] == 'STOP':
-                        stream_h.stop_stream()
         
         
 
