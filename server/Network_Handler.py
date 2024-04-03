@@ -1,4 +1,5 @@
 import socket
+import ssl
 
 BACKLOG = 10
 SERV_ADDR = '127.0.0.1'
@@ -12,6 +13,9 @@ class Network_Handler:
         self.host = addr
         self.port = port
         self.server_socket = None
+        self.ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        self.ssl_context.load_cert_chain(certfile=r"server\encryption\server.csr", keyfile=r"server\encryption\server.key")
+        self.ssl_sock = None
         self.clients = []
         self.streaming = True
     
@@ -21,6 +25,7 @@ class Network_Handler:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(BACKLOG)
+        self.ssl_sock = self.ssl_context.wrap_socket(self.server_socket, server_side=True)
         
     def send_data(self, client_sock, data, text: bool = False) -> None:
         try:

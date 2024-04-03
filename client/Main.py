@@ -1,7 +1,8 @@
 from Network_Handler import Network_Handler, BUFFSIZE
 from Stream_Handler import Stream_Handler
 from select import select
-import socket
+
+CMDLEN = 4
 
 def main():
     network_h = Network_Handler('127.0.0.1', 31337)
@@ -14,7 +15,7 @@ def main():
         rlist, _, _ = select(sock_list, [], [])
         
         for sock in rlist:
-            if sock is network_h.sock:
+            if sock is network_h.ssl_sock:
                 #Recieved data from server
                 data = sock.recv(BUFFSIZE)
                 if not data:
@@ -24,10 +25,9 @@ def main():
                     #Handle data here
                     
                     if stream_h.playing:
-                        stream_h.curr_buffer.append(data)
-                    
+                        stream_h.chunks.append(data)
                     else:
-                        if data.decode().strip('0')[:5] == 'PLAY:':
+                        if data.decode().strip('0')[:CMDLEN] == 'PLAY':
                             stream_h.playing = True
                             stream_h.start_stream()
                         else:
