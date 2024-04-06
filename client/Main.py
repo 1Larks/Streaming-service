@@ -9,7 +9,7 @@ def main():
     network_h.connect_to_server()
     stream_h = Stream_Handler(network_h)
     
-    sock_list = [network_h.sock]
+    sock_list = [network_h.ssl_sock]
     network_h.send_data(input('enter command:'))
     while True:
         rlist, _, _ = select(sock_list, [], [])

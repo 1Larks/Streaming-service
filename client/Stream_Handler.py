@@ -3,21 +3,12 @@ import threading
 import pyaudio
 import numpy as np
 import subprocess
-import time
+import io
+import wave
+import sounddevice as sd
 
-BUFFERSIZE = 4096
-STOP_BUFF = 'STOP'.zfill(BUFFERSIZE).encode()
 
-#Temporary decorator function for debugging and optimization
-def time_func(func):
-    def inner(*args, **kwargs):
-        start = time.time()
-        res = func(*args, **kwargs)
-        print(f'function name: {func.__name__}, time took: {time.time()-start}')
-        return res
-    
-    return inner
-
+STOP_BUFF = 'STOP'.zfill(Network_Handler.BUFFSIZE).encode()
 
 class Stream_Handler:
     def __init__(self, network_handler: Network_Handler.Network_Handler) -> None:
@@ -42,23 +33,34 @@ class Stream_Handler:
         
         info = self.chunks.pop(0).decode().strip('0').split(':')
         self.sample_rate, self.channels = int(info[0]), int(info[1])
-        
-        self.stream = self.audio.open(self.sample_rate, self.channels, pyaudio.paInt16, False, True, frames_per_buffer=BUFFERSIZE)
-        
+    
+        self.stream = sd.RawOutputStream(self.sample_rate, 0, dtype='int16', latency='low')
+        self.stream.start()
         while self.playing:
-            if len(self.chunks) > 0:
-                current_buffer = self.chunks.pop(0)
+            try:
+                if len(self.chunks) > 0:
+                    current_buffer = self.chunks.pop(0)
                 if current_buffer == STOP_BUFF:
                     self.playing = False
                     break
-                
-                pcm_chunk = self.decode_mp3_chunk(current_buffer)
-                
-                
-                self.stream.write(pcm_chunk)
+                if current_buffer is not None:
+                    pcm_chunk = self.decode_mp3_chunk(current_buffer)
+                    
+                    arr = np.frombuffer(pcm_chunk, np.int16)
+                    arr = np.reshape(arr, (-1, self.channels))
+                    
+                    splitted_array = np.split(arr, 1152)
+                    while splitted_array:
+                        print(len(splitted_array))
+                        print(len(splitted_array[0]))
+                        self.stream.write(splitted_array.pop(0))
+
+            except Exception as error:
+                print(f'Error while playing song: {error}')
         
         self.stream.close()
-    @time_func
+    
+    
     def decode_mp3_chunk(self, mp3_chunk):
         # Use ffmpeg to decode MP3 chunk to raw PCM audio data
         process = subprocess.Popen([
@@ -77,7 +79,15 @@ class Stream_Handler:
             print("Error decoding MP3 chunk:", stderr)
             return None
     
-
+    def pcm_to_wav(self, pcm_chunk):
+        buffer = io.BytesIO()
+        with wave.open(buffer, 'wb') as wav_file:
+            wav_file.setnchannels(self.channels)
+            wav_file.setframerate(self.sample_rate)
+            wav_file.setsampwidth(2)
+            wav_file.writeframes(pcm_chunk)
+        return buffer.getvalue()
+    
     def start_stream(self):
         threading.Thread(target=self._play_song).start()
     
