@@ -34,10 +34,11 @@ class Stream_Handler:
         info = self.chunks.pop(0).decode().strip('0').split(':')
         self.sample_rate, self.channels = int(info[0]), int(info[1])
     
-        self.stream = sd.RawOutputStream(self.sample_rate, 0, dtype='int16', latency='low')
+        self.stream = sd.RawOutputStream(self.sample_rate, 1152, dtype='int16')
         self.stream.start()
         while self.playing:
             try:
+                current_buffer = None
                 if len(self.chunks) > 0:
                     current_buffer = self.chunks.pop(0)
                 if current_buffer == STOP_BUFF:
@@ -49,9 +50,10 @@ class Stream_Handler:
                     arr = np.frombuffer(pcm_chunk, np.int16)
                     arr = np.reshape(arr, (-1, self.channels))
                     
-                    splitted_array = np.split(arr, 1152)
+                    # the fixed length for every subarray should be
+                    # the length of the pcm chunk // the GCD of the two constant PCM chunk sizes (16128,13824) (which is 2304)
+                    splitted_array = np.split(arr, len(pcm_chunk) // 2304)
                     while splitted_array:
-                        print(len(splitted_array))
                         print(len(splitted_array[0]))
                         self.stream.write(splitted_array.pop(0))
 
@@ -65,11 +67,11 @@ class Stream_Handler:
         # Use ffmpeg to decode MP3 chunk to raw PCM audio data
         process = subprocess.Popen([
             'ffmpeg.exe',
-            '-i', 'pipe:0',       # Read from stdin
-            '-f', 's16le',        # Set output format to signed 16-bit little-endian
-            '-ac', f'{self.channels}',      # Set number of audio channels to stereo
-            '-ar', f'{self.sample_rate}',   # Set audio sample rate to 44100 Hz
-            '-'],                 # Output to stdout
+            '-i', 'pipe:0',
+            '-f', 's16le',
+            '-ac', f'{self.channels}',
+            '-ar', f'{self.sample_rate}',
+            '-'],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate(input=mp3_chunk)
         if process.returncode == 0:
@@ -78,15 +80,6 @@ class Stream_Handler:
         else:
             print("Error decoding MP3 chunk:", stderr)
             return None
-    
-    def pcm_to_wav(self, pcm_chunk):
-        buffer = io.BytesIO()
-        with wave.open(buffer, 'wb') as wav_file:
-            wav_file.setnchannels(self.channels)
-            wav_file.setframerate(self.sample_rate)
-            wav_file.setsampwidth(2)
-            wav_file.writeframes(pcm_chunk)
-        return buffer.getvalue()
     
     def start_stream(self):
         threading.Thread(target=self._play_song).start()
