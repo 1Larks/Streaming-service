@@ -19,9 +19,9 @@ class Network_Handler:
         self.ssl_sock.connect((self.serv_addr, self.serv_port))
         print(f"Connected to server: {self.serv_addr}:{self.serv_port}")
     
-    def send_data(self, data):
+    def send_data(self, data, text: bool = False):
         try:
-            self.ssl_sock.sendall(data.zfill(BUFFSIZE).encode())
+            self.ssl_sock.sendall(data.zfill(BUFFSIZE).encode() if text else data)
         except Exception as err:
             print(f"Error sending data to server: {err}")
     

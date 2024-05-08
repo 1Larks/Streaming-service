@@ -34,7 +34,7 @@ class Stream_Handler:
         info = self.chunks.pop(0).decode().strip('0').split(':')
         self.sample_rate, self.channels = int(info[0]), int(info[1])
     
-        self.stream = sd.RawOutputStream(self.sample_rate, 1152, dtype='int16')
+        self.stream = sd.RawOutputStream(self.sample_rate, Network_Handler.BUFFSIZE, dtype='int16')
         self.stream.start()
         while self.playing:
             try:
@@ -45,41 +45,12 @@ class Stream_Handler:
                     self.playing = False
                     break
                 if current_buffer is not None:
-                    pcm_chunk = self.decode_mp3_chunk(current_buffer)
-                    
-                    arr = np.frombuffer(pcm_chunk, np.int16)
-                    arr = np.reshape(arr, (-1, self.channels))
-                    
-                    # the fixed length for every subarray should be
-                    # the length of the pcm chunk // the GCD of the two constant PCM chunk sizes (16128,13824) (which is 2304)
-                    splitted_array = np.split(arr, len(pcm_chunk) // 2304)
-                    while splitted_array:
-                        print(len(splitted_array[0]))
-                        self.stream.write(splitted_array.pop(0))
+                    self.stream.write(current_buffer)
 
             except Exception as error:
                 print(f'Error while playing song: {error}')
         
         self.stream.close()
-    
-    
-    def decode_mp3_chunk(self, mp3_chunk):
-        # Use ffmpeg to decode MP3 chunk to raw PCM audio data
-        process = subprocess.Popen([
-            'ffmpeg.exe',
-            '-i', 'pipe:0',
-            '-f', 's16le',
-            '-ac', f'{self.channels}',
-            '-ar', f'{self.sample_rate}',
-            '-'],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate(input=mp3_chunk)
-        if process.returncode == 0:
-            pcm_data = np.frombuffer(stdout, dtype=np.int16)
-            return pcm_data
-        else:
-            print("Error decoding MP3 chunk:", stderr)
-            return None
     
     def start_stream(self):
         threading.Thread(target=self._play_song).start()

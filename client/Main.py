@@ -24,7 +24,7 @@ def main():
     stream_h = Stream_Handler(network_h)
     
     sock_list = [network_h.ssl_sock]
-    network_h.send_data(input('enter command:'))
+    network_h.send_data(input('enter command:'), text=True)
     
     while True:
         rlist, _, _ = select(sock_list, [], [])

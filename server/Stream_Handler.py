@@ -1,7 +1,7 @@
 import threading
 import Network_Handler
 import os
-from mutagen import mp3
+from pydub.utils import mediainfo
 
 '''
 
@@ -20,14 +20,14 @@ class Stream_Handler:
     
     def _play_song(self, song_name, client_sock):
         #Temporary
-        path = f'server\\songs\\{song_name}.mp3'
+        path = f'server\\songs\\{song_name}.wav'
         self.network_h.send_data(client_sock, 'PLAY:', text=True)
         try:
             with open(path, 'rb') as song:
                 
-                info = mp3.MP3(song).info
+                info = mediainfo(path)
                 
-                sample_rate, channels = info.sample_rate, info.channels
+                sample_rate, channels = info['sample_rate'], info['channels']
                 self.network_h.send_data(client_sock, f'{sample_rate}:{channels}', text=True)
                 
                 while self.streaming:
