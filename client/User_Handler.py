@@ -3,8 +3,9 @@ import secrets
 import Network_Handler
 
 return_values = {
-    'username not found': '-1',
-    'incorrect password': '-2',
+    'username not found': '1',
+    'incorrect password': '2',
+    'username taken': '3',
     'success': '0'
 }
 
@@ -22,7 +23,7 @@ class User_Handler:
         
         hashed_password = hashlib.sha256((password + salt).encode()).hexdigest()
         
-        registration_data = f'{username}:{hashed_password}:{salt}'
+        registration_data = f'RGST{username}:{hashed_password}:{salt}'
         
         return return_values['success']
 

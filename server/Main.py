@@ -3,25 +3,29 @@ import select
 import Stream_Handler
 from User_Handler import User_Handler
 from Network_Handler import Network_Handler, BUFFSIZE
+from DB_Handler import DBHandler
+from User_Handler import User_Handler
 
 CMDLEN = 4
 
-def handle_client_data(data, sock, network_h, stream_h):
+def handle_client_data(data, sock, network_h, stream_h, user_h):
     data = data.decode().strip('0')
     command = data[:CMDLEN]
+    data = data[CMDLEN:]
     #Temporary
     if command == 'LOGN':
         pass
     elif command == 'RGST':
         pass
     elif command == 'PLAY':
-        stream_h.start_stream(data[CMDLEN:], sock)
+        stream_h.start_stream(data, sock)
     
 
 def main():
     network_h = Network_Handler()
-    user_h = User_Handler()
     stream_h = Stream_Handler.Stream_Handler(network_h)
+    db_h = DBHandler()
+    user_h = User_Handler(db_h)
     
     network_h.start_server()
     while True:
@@ -33,7 +37,7 @@ def main():
                     try:
                         data = sock.recv(BUFFSIZE)
                         if data:
-                            handle_client_data(data, sock, network_h, stream_h)
+                            handle_client_data(data, sock, network_h, stream_h, user_h)
                             
                         else:
                             network_h.remove_client(sock)

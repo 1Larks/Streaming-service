@@ -1,7 +1,7 @@
 import sqlite3
 
 class DBHandler:
-    def __init__(self, users_db_file=r"./databases/users.db", songs_db_file="./databases/songs.db", preferences_db_file="./databases/preferences.db"):
+    def __init__(self, users_db_file=r"./server/databases/users.db", songs_db_file="./server/databases/songs.db", preferences_db_file="./server/databases/preferences.db"):
         # Connect to databases
         self.users_conn = sqlite3.connect(users_db_file)
         self.songs_conn = sqlite3.connect(songs_db_file)

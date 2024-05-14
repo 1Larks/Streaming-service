@@ -14,7 +14,7 @@ class Network_Handler:
         self.port = port
         self.server_socket = None
         self.ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        self.ssl_context.load_cert_chain(certfile=r"server\encryption\certificate.pem", keyfile=r"server\encryption\private_key.pem")
+        self.ssl_context.load_cert_chain(certfile=r"server/encryption/certificate.pem", keyfile=r"server/encryption/private_key.pem")
         self.ssl_sock = None
         self.clients = []
         self.streaming = True

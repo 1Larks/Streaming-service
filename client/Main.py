@@ -6,15 +6,16 @@ import os
 CMDLEN = 4
 
 def handle_server_data(data, network_h, stream_h):
-    if stream_h.playing:
-        stream_h.chunks.append(data)
+    dataHeader = data[:CMDLEN].decode()
+    dataNoHeader = data[CMDLEN:]
+    if dataHeader == 'CHNK':
+        stream_h.chunks.append(dataNoHeader)
+    elif dataHeader == 'PLAY':
+        stream_h.playing = True
+        stream_h.start_stream()
     else:
-        if data.decode().strip('0')[:CMDLEN] == 'PLAY':
-            stream_h.playing = True
-            stream_h.start_stream()
-        else:
-            #Handle other info from the server
-            pass
+        #Handle other info from the server
+        pass
                     
 
 def main():

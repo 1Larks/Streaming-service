@@ -20,8 +20,8 @@ class Stream_Handler:
     
     def _play_song(self, song_name, client_sock):
         #Temporary
-        path = f'server\\songs\\{song_name}.wav'
-        self.network_h.send_data(client_sock, 'PLAY:', text=True)
+        path = f'server/songs/{song_name}.wav'
+        self.network_h.send_data(client_sock, 'PLAY', text=True)
         try:
             with open(path, 'rb') as song:
                 
@@ -31,10 +31,10 @@ class Stream_Handler:
                 self.network_h.send_data(client_sock, f'{sample_rate}:{channels}', text=True)
                 
                 while self.streaming:
-                    chunk = song.read(CHUNK_SIZE)
+                    chunk = song.read(CHUNK_SIZE-4)
                     if not chunk:
                         break
-                    self.network_h.send_data(client_sock, chunk)
+                    self.network_h.send_data(client_sock, b'CHNK'+chunk.zfill(CHUNK_SIZE-4))
                     
                 self.network_h.send_data(client_sock, ':STOP', text=True)
         except Exception as err:
