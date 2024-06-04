@@ -2,10 +2,10 @@ import hashlib
 import secrets
 
 return_values = {
-    'username not found': '1',
-    'incorrect password': '2',
-    'username taken': '3',
-    'success': '0'
+    'username not found': 'N',
+    'incorrect password': 'I',
+    'username taken': 'T',
+    'success': 'S'
 }
 
 class User_Handler:
@@ -25,4 +25,16 @@ class User_Handler:
 
 
     def login(self, username, hashed_password):
-        pass
+        data = self.db_h.search_user(username)
+        if not data:
+            return return_values['username not found']
+        if hashed_password != data[2]:
+            return return_values['incorrect password']
+        else:
+            return return_values['success']
+        
+    def send_salt(self, sock, username):
+        data = self.db_h.search_user(username)
+        if not data:
+            return return_values['username not found']
+        self.network_h.send_data(sock, 'SALT'+data[3], text = True)

@@ -12,6 +12,17 @@ class Network_Handler:
         self.ssl_context.check_hostname = False
         self.ssl_context.verify_mode = ssl.CERT_NONE
         self.ssl_sock = None
+        self.buffers = {
+            'salt': None,
+            'auth': None
+            }
+    
+    def getAsyncBuffer(self, buffName):
+        while self.buffers[buffName] == None:
+            continue
+        result = self.buffers[buffName]
+        self.buffers[buffName] = None
+        return result
     
     def connect_to_server(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
