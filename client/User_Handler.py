@@ -1,19 +1,21 @@
 import hashlib
 import secrets
 import Network_Handler
+import threading
 
 return_values = {
-    'username not found': '1',
-    'incorrect password': '2',
-    'username taken': '3',
-    'success': '0'
+    'N': 'username not found',
+    'I': 'incorrect password',
+    'T': 'username taken',
+    'S': 'success'
 }
 
 class User_Handler:
-    def __init__(self, network_handler):
+    def __init__(self, network_handler: Network_Handler):
         self.network_h = network_handler
         self.authenticated = False
         self.username = None
+        self.buffer = []
         
     
     # Register a new user on the server
@@ -25,12 +27,19 @@ class User_Handler:
         
         registration_data = f'RGST{username}:{hashed_password}:{salt}'
         
-        return return_values['success']
+        self.network_h.send_data(registration_data, text=True)
+        
+        self.username = username
+        return return_values['S']
 
     # Authenticate a user
-    def login_user(self, username, password):
+    def _login(self, username, password):
         # Retrieve salt from the server (the server sends the salt for the provided username)
-        salt = self.network_h.retrieve_salt_from_server(username)
+        
+        self.network_h.send_data(f'SALT{username}', text=True)
+        while len(self.buffer) == 0:
+            continue
+        salt = self.buffer.pop(0)
         
         if salt is None:
             return return_values['username not found']
@@ -38,12 +47,20 @@ class User_Handler:
         hashed_password = hashlib.sha256((password + salt).encode()).hexdigest()
         
         # Send login request to the server
-        login_data = f'{username}:{hashed_password}'
-        server_response = self.network_h.send_data(login_data)
+        login_data = f'LOGN{username}:{hashed_password}'
+        self.network_h.send_data(login_data, text = True)
         
-        if server_response == return_values['success']:
-            self.authenticated = True
-            self.username = username
+        self.username = username
             
-        return server_response
+        return None
     
+    def login(self, username, password):
+        threading.Thread(target=self._login, args=(username, password)).start()
+    
+    def check_validity(self, serverResponse):
+        print(return_values[serverResponse])
+        if serverResponse == 'S':
+            self.authenticated = True
+            return True
+        else:
+            return False

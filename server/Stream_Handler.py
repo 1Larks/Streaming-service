@@ -2,6 +2,7 @@ import threading
 import Network_Handler
 import os
 from pydub.utils import mediainfo
+import traceback
 
 '''
 
@@ -20,25 +21,26 @@ class Stream_Handler:
     
     def _play_song(self, song_name, client_sock):
         #Temporary
-        path = f'server/songs/{song_name}.wav'
-        self.network_h.send_data(client_sock, 'PLAY', text=True)
+        path = f'server\\songs\\{song_name}.wav'
+        self.network_h.send_data(client_sock, 'PLAY'+('0'*(CHUNK_SIZE-4)), text=True)
         try:
             with open(path, 'rb') as song:
                 
                 info = mediainfo(path)
                 
                 sample_rate, channels = info['sample_rate'], info['channels']
-                self.network_h.send_data(client_sock, f'{sample_rate}:{channels}', text=True)
+                self.network_h.send_data(client_sock, f'CHNK{sample_rate}:{channels}', text=True)
                 
                 while self.streaming:
                     chunk = song.read(CHUNK_SIZE-4)
                     if not chunk:
                         break
-                    self.network_h.send_data(client_sock, b'CHNK'+chunk.zfill(CHUNK_SIZE-4))
+                    self.network_h.send_data(client_sock, ('CHNK'.encode())+chunk)
                     
-                self.network_h.send_data(client_sock, ':STOP', text=True)
+                self.network_h.send_data(client_sock, 'STOP', text=True)
         except Exception as err:
             print(f"Error sending song to client: {err}")
+            print(traceback.format_exc())
     
     def start_stream(self, song_name, client_sock):
         self.streaming = True
