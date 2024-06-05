@@ -37,8 +37,14 @@ class User_Handler:
         # Retrieve salt from the server (the server sends the salt for the provided username)
         
         self.network_h.send_data(f'SALT{username}', text=True)
+<<<<<<< HEAD
         
         salt = self.network_h.getAsyncBuffer('salt')
+=======
+        while len(self.buffer) == 0:
+            continue
+        salt = self.buffer.pop(0)
+>>>>>>> 66e273e07e27b09ff17ee671b1ea46e79a1adbaa
         
         if salt is None:
             return return_values['username not found']
@@ -58,4 +64,12 @@ class User_Handler:
     
     def check_validity(self, serverResponse):
         print(return_values[serverResponse])
+<<<<<<< HEAD
         return return_values[serverResponse]
+=======
+        if serverResponse == 'S':
+            self.authenticated = True
+            return True
+        else:
+            return False
+>>>>>>> 66e273e07e27b09ff17ee671b1ea46e79a1adbaa
