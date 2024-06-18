@@ -13,6 +13,7 @@ class Stream_Handler:
         Initializes the Stream_Handler with attributes for managing streaming state and audio data.
         """
         self.playing = False
+        self.ended = False
         self.frames_received = -1
         self.chunks = []
         self.sample_rate = None
@@ -27,7 +28,7 @@ class Stream_Handler:
         """
         while len(self.chunks) == 0:
             continue
-        
+        self.ended = False
         if not self.sample_rate and not self.channels and not self.size:
             info = self.chunks.pop(0).decode().strip('0').split(':')
             self.sample_rate = int(info[0])
@@ -51,12 +52,12 @@ class Stream_Handler:
                     self.frames_received += len(current_buffer) // self.frame_size
                 else:
                     self.stop_stream()
+                    self.ended = True
                     self.reset_stream()
                 
             except Exception as error:
                 print(f'Error while playing song: {error}')
         
-        print('Playback stopped')
         self.stream.close()
 
     def start_stream(self):
@@ -71,8 +72,9 @@ class Stream_Handler:
         """
         self.playing = False
         sleep(0.2)  # Wait for the loop to close
+        
         self.chunks.clear()
-
+    
     def reset_stream(self):
         """
         Resets stream and attributes.

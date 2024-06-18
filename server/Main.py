@@ -20,10 +20,11 @@ def handle_client_data(data, sock, network_h, stream_h, user_h, db_h):
     user_h (User_Handler): Instance of User_Handler.
     db_h: Instance of DBHandler.
     """
+    
     data = data.decode().strip('0')
     command = data[:CMDLEN]
     data = data[CMDLEN:]
-
+    
     if command == 'LOGN':
         username, hashed_password = data.split(':')
         resp = user_h.login(username, hashed_password)
@@ -52,7 +53,16 @@ def handle_client_data(data, sock, network_h, stream_h, user_h, db_h):
         
     elif command == 'PAUS':
         stream_h.stop_stream(sock)
-        
+    
+    elif command == 'NEXT':
+        network_h.send_data(sock, 'SONG'+str(db_h.get_next_song_id(int(data))), text=True)
+    
+    elif command == 'PREV':
+        network_h.send_data(sock, 'SONG'+str(db_h.get_previous_song_id(int(data))), text=True)
+    
+    elif command == 'ALBM':
+        network_h.send_data(sock, 'SONG'+str(db_h.get_first_song_id(int(data))), text=True)
+    
     else:
         pass
 

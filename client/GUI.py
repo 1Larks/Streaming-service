@@ -20,7 +20,9 @@ class AudioStreamingApp(App):
         return self.screen_manager
     
     def build_main_screen(self):
-        self.main_screen = MainScreen(self.user_h.username, self.logout_callback, self.search_callback, self.play_callback, self.pause_callback, self.seek_callback)
+        self.main_screen = MainScreen(self.user_h.username, self.logout_callback, self.search_callback, self.play_callback, 
+                                      self.pause_callback, self.seek_callback, self.get_song_info_callback, 
+                                      self.get_neighboring_songs_callback, self.has_ended, self.get_album_song)
         self.screen_manager.add_widget(self.main_screen)
     
     def login_callback(self, username, password):
@@ -41,6 +43,7 @@ class AudioStreamingApp(App):
         else:
             popup_message(f"Registration failed: {return_values[response]}", 'Error')
     def logout_callback(self):
+        self.pause_callback(stop=True)
         self.screen_manager.current = 'login_screen'
         self.screen_manager.remove_widget(self.main_screen)
         self.user_h.username = None
@@ -59,5 +62,21 @@ class AudioStreamingApp(App):
             self.stream_h.reset_stream()
         
     def seek_callback(self, point):
-        point = int(point*self.stream_h.size)
+        point = int(point*(self.stream_h.size))
         self.stream_h.frames_received = point
+    
+    def get_song_info_callback(self):
+        return self.stream_h.frames_received, self.stream_h.size, self.stream_h.sample_rate, self.stream_h.frame_size
+    
+    def get_neighboring_songs_callback(self, cmd, song_id):
+        self.network_h.send_data(cmd+song_id, text=True)
+        result = self.network_h.getAsyncBuffer('song')
+        return result
+    
+    def has_ended(self):
+        return self.stream_h.ended
+    
+    def get_album_song(self, album_id):
+        self.network_h.send_data('ALBM'+str(album_id), text=True)
+        res = self.network_h.getAsyncBuffer('song')
+        return res

@@ -20,18 +20,27 @@ def handle_server_data(data, network_h, stream_h):
     if data_header == 'CHNK':
         if stream_h.playing:
             stream_h.chunks.append(data_no_header)
+    
     elif data_header == 'PLAY':
         stream_h.playing = True
         stream_h.start_stream()
+    
     elif data_header in ['RGST', 'LOGN']:
         data_no_header = data_no_header.decode().strip('0')
         network_h.buffers['auth'] = data_no_header
+    
     elif data_header == 'SALT':
         network_h.buffers['salt'] = data_no_header.decode().strip('0')
+    
     elif data_header == 'SRCH':
         search_result = pickle.loads(data_no_header)
         print(search_result)
         network_h.buffers['search'] = search_result
+    
+    elif data_header == 'SONG':
+        data_no_header = data_no_header.decode().strip('0')
+        network_h.buffers['song'] = int(data_no_header)
+
 
 def run_network_handler(network_h, stream_h, user_h):
     """

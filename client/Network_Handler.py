@@ -22,7 +22,8 @@ class Network_Handler:
         self.buffers = {
             'salt': None,
             'auth': None,
-            'search': None
+            'search': None,
+            'song': None
         }
     
     def getAsyncBuffer(self, buff_name):

@@ -262,3 +262,103 @@ class DBHandler:
         except:
             pass
         return album_id
+    
+    def get_next_song_id(self, song_id):
+        cursor = self.connection.cursor()
+        
+        # Get album_id and track_number of the current song
+        cursor.execute('''
+        SELECT album_id, track_number
+        FROM songs
+        WHERE id = ?
+        ''', (song_id,))
+        current_song = cursor.fetchone()
+        
+        if not current_song:
+            return None
+        
+        album_id, current_track_number = current_song
+        
+        # Get the next song in the same album
+        cursor.execute('''
+        SELECT id
+        FROM songs
+        WHERE album_id = ? AND track_number > ?
+        ORDER BY track_number ASC
+        LIMIT 1
+        ''', (album_id, current_track_number))
+        next_song = cursor.fetchone()
+        
+        if next_song:
+            return next_song[0]
+        
+        # If no next song is found, return the first song in the album
+        cursor.execute('''
+        SELECT id
+        FROM songs
+        WHERE album_id = ?
+        ORDER BY track_number ASC
+        LIMIT 1
+        ''', (album_id,))
+        first_song = cursor.fetchone()
+        
+        return first_song[0] if first_song else None
+    
+    def get_previous_song_id(self, song_id):
+        cursor = self.connection.cursor()
+
+        # Get album_id and track_number of the current song
+        cursor.execute('''
+        SELECT album_id, track_number
+        FROM songs
+        WHERE id = ?
+        ''', (song_id,))
+        current_song = cursor.fetchone()
+        
+        if not current_song:
+            return None
+        
+        album_id, current_track_number = current_song
+        
+        # Get the previous song in the same album
+        cursor.execute('''
+        SELECT id
+        FROM songs
+        WHERE album_id = ? AND track_number < ?
+        ORDER BY track_number DESC
+        LIMIT 1
+        ''', (album_id, current_track_number))
+        previous_song = cursor.fetchone()
+        
+        if previous_song:
+            return previous_song[0]
+        
+        # If no previous song is found, return the last song in the album
+        cursor.execute('''
+        SELECT id
+        FROM songs
+        WHERE album_id = ?
+        ORDER BY track_number DESC
+        LIMIT 1
+        ''', (album_id,))
+        last_song = cursor.fetchone()
+        
+        return last_song[0] if last_song else None
+    
+    def get_first_song_id(self, album_id):
+        cursor = self.connection.cursor()
+        
+        # Get the first song in the album based on track_number
+        cursor.execute('''
+        SELECT id
+        FROM songs
+        WHERE album_id = ?
+        ORDER BY track_number ASC
+        LIMIT 1
+        ''', (album_id,))
+        first_song = cursor.fetchone()
+        
+        if first_song:
+            return first_song[0]
+        else:
+            return None
